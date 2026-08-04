@@ -19,3 +19,8 @@ export function todayISO(): string {
 export function monthStartISO(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 }
+
+export function monthEndISO(date = new Date()): string {
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+}

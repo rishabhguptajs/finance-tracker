@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, type Category, type Expense, type ExtractedExpense } from "@/lib/types";
+import { CATEGORIES, type Category, type ExtractedExpense } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
+import { revalidateExpenses } from "@/lib/revalidate";
 
-export default function ExpenseEntry({
-  onSaved,
-}: {
-  onSaved: (expense: Expense) => void;
-}) {
+export default function ExpenseEntry() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +75,7 @@ export default function ExpenseEntry({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
-      onSaved(data.expense);
+      await revalidateExpenses();
       setSavedCount((c) => c + 1);
       advance();
     } catch (err) {

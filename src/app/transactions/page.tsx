@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 import type { Category, Expense } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { formatINR } from "@/lib/format";
@@ -10,42 +11,31 @@ import ExpenseRow from "@/components/ExpenseRow";
 type SortBy = "spent_on" | "amount";
 
 export default function TransactionsPage() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState<Category | "">("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("spent_on");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (category) params.set("category", category);
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
-    params.set("sortBy", sortBy);
-    params.set("sortDir", sortDir);
-
-    const res = await fetch(`/api/expenses?${params.toString()}`);
-    const data = await res.json();
-    setExpenses(data.expenses ?? []);
-    setLoading(false);
-  }, [search, category, from, to, sortBy, sortDir]);
-
   useEffect(() => {
-    const t = setTimeout(load, 250);
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(t);
-  }, [load]);
+  }, [search]);
 
-  function handleUpdated(expense: Expense) {
-    setExpenses((prev) => prev.map((e) => (e.id === expense.id ? expense : e)));
-  }
-  function handleDeleted(id: string) {
-    setExpenses((prev) => prev.filter((e) => e.id !== id));
-  }
+  const params = new URLSearchParams();
+  if (debouncedSearch) params.set("search", debouncedSearch);
+  if (category) params.set("category", category);
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  params.set("sortBy", sortBy);
+  params.set("sortDir", sortDir);
+
+  const { data, isLoading: loading } = useSWR<{ expenses: Expense[] }>(
+    `/api/expenses?${params.toString()}`
+  );
+  const expenses = data?.expenses ?? [];
 
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
@@ -118,15 +108,7 @@ export default function TransactionsPage() {
           ) : expenses.length === 0 ? (
             <p className="py-10 text-center text-sm text-neutral-400">No transactions match your filters.</p>
           ) : (
-            expenses.map((e) => (
-              <ExpenseRow
-                key={e.id}
-                expense={e}
-                onUpdated={handleUpdated}
-                onDeleted={handleDeleted}
-                showDate
-              />
-            ))
+            expenses.map((e) => <ExpenseRow key={e.id} expense={e} showDate />)
           )}
         </div>
       </div>

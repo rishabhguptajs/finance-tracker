@@ -5,17 +5,14 @@ import type { Category, Expense } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
 import { formatDateDDMMYYYY, formatINR } from "@/lib/format";
+import { revalidateExpenses } from "@/lib/revalidate";
 import CategoryBadge from "./CategoryBadge";
 
 export default function ExpenseRow({
   expense,
-  onUpdated,
-  onDeleted,
   showDate = false,
 }: {
   expense: Expense;
-  onUpdated: (e: Expense) => void;
-  onDeleted: (id: string) => void;
   showDate?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
@@ -38,9 +35,8 @@ export default function ExpenseRow({
           spent_on: spentOn,
         }),
       });
-      const data = await res.json();
       if (res.ok) {
-        onUpdated(data.expense);
+        await revalidateExpenses();
         setEditing(false);
       }
     } finally {
@@ -53,7 +49,7 @@ export default function ExpenseRow({
     setBusy(true);
     try {
       const res = await fetch(`/api/expenses/${expense.id}`, { method: "DELETE" });
-      if (res.ok) onDeleted(expense.id);
+      if (res.ok) await revalidateExpenses();
     } finally {
       setBusy(false);
     }

@@ -1,83 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { Expense } from "@/lib/types";
-import { formatINR, monthStartISO, todayISO } from "@/lib/format";
+import { useState } from "react";
+import useSWR from "swr";
+import type { Budget, Expense } from "@/lib/types";
+import { formatINR, monthEndISO, monthStartISO, todayISO } from "@/lib/format";
 import ExpenseEntry from "@/components/ExpenseEntry";
 import ExpenseRow from "@/components/ExpenseRow";
 import BudgetBar from "@/components/BudgetBar";
 import BudgetAlertBanner from "@/components/BudgetAlertBanner";
-import { BUDGET_UPDATED_EVENT } from "@/components/SettingsModal";
 
 export default function HomePage() {
   const [today] = useState(todayISO());
-  const [todayExpenses, setTodayExpenses] = useState<Expense[]>([]);
-  const [loadingToday, setLoadingToday] = useState(true);
-  const [monthSpent, setMonthSpent] = useState<number | null>(null);
-  const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
+  const month = monthStartISO();
+  const lastDay = monthEndISO();
 
-  const loadToday = useCallback(async () => {
-    setLoadingToday(true);
-    const res = await fetch(`/api/expenses?from=${today}&to=${today}&sortBy=created_at&sortDir=desc`);
-    const data = await res.json();
-    setTodayExpenses(data.expenses ?? []);
-    setLoadingToday(false);
-  }, [today]);
+  const { data: todayData, isLoading: loadingToday } = useSWR<{ expenses: Expense[] }>(
+    `/api/expenses?from=${today}&to=${today}&sortBy=created_at&sortDir=desc`
+  );
+  const { data: monthData } = useSWR<{ expenses: Expense[] }>(
+    `/api/expenses?from=${month}&to=${lastDay}`
+  );
+  const { data: budgetData } = useSWR<{ budget: Budget | null }>(`/api/budget?month=${month}`);
 
-  const loadMonth = useCallback(async () => {
-    const month = monthStartISO();
-    const monthEnd = new Date();
-    const lastDay = new Date(monthEnd.getFullYear(), monthEnd.getMonth() + 1, 0)
-      .toISOString()
-      .slice(0, 10);
-
-    const [expensesRes, budgetRes] = await Promise.all([
-      fetch(`/api/expenses?from=${month}&to=${lastDay}`),
-      fetch(`/api/budget?month=${month}`),
-    ]);
-    const expensesData = await expensesRes.json();
-    const budgetData = await budgetRes.json();
-
-    const total = (expensesData.expenses ?? []).reduce(
-      (sum: number, e: Expense) => sum + Number(e.amount),
-      0
-    );
-    setMonthSpent(total);
-    setBudgetLimit(budgetData.budget ? Number(budgetData.budget.limit_amount) : null);
-  }, []);
-
-  useEffect(() => {
-    loadToday();
-    loadMonth();
-  }, [loadToday, loadMonth]);
-
-  useEffect(() => {
-    const handler = () => loadMonth();
-    window.addEventListener(BUDGET_UPDATED_EVENT, handler);
-    return () => window.removeEventListener(BUDGET_UPDATED_EVENT, handler);
-  }, [loadMonth]);
-
-  function handleSaved(expense: Expense) {
-    if (expense.spent_on === today) {
-      setTodayExpenses((prev) => [expense, ...prev]);
-    }
-    loadMonth();
-  }
-
-  function handleUpdated(expense: Expense) {
-    setTodayExpenses((prev) =>
-      expense.spent_on === today
-        ? prev.map((e) => (e.id === expense.id ? expense : e))
-        : prev.filter((e) => e.id !== expense.id)
-    );
-    loadMonth();
-  }
-
-  function handleDeleted(id: string) {
-    setTodayExpenses((prev) => prev.filter((e) => e.id !== id));
-    loadMonth();
-  }
-
+  const todayExpenses = todayData?.expenses ?? [];
+  const monthSpent = monthData
+    ? monthData.expenses.reduce((sum, e) => sum + Number(e.amount), 0)
+    : null;
+  const budgetLimit = budgetData?.budget ? Number(budgetData.budget.limit_amount) : null;
   const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
   return (
@@ -91,7 +40,7 @@ export default function HomePage() {
           Type it however feels natural — we&apos;ll figure out the rest.
         </p>
         <div className="mt-4">
-          <ExpenseEntry onSaved={handleSaved} />
+          <ExpenseEntry />
         </div>
       </div>
 
@@ -113,14 +62,7 @@ export default function HomePage() {
               No expenses logged today yet.
             </p>
           ) : (
-            todayExpenses.map((e) => (
-              <ExpenseRow
-                key={e.id}
-                expense={e}
-                onUpdated={handleUpdated}
-                onDeleted={handleDeleted}
-              />
-            ))
+            todayExpenses.map((e) => <ExpenseRow key={e.id} expense={e} />)
           )}
         </div>
       </div>

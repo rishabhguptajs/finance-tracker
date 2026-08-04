@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Category, Expense } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+import type { Budget, Category, Expense } from "@/lib/types";
 import { formatINR } from "@/lib/format";
 import BudgetBar from "@/components/BudgetBar";
 import BudgetAlertBanner from "@/components/BudgetAlertBanner";
@@ -9,7 +10,6 @@ import CategoryDonutChart from "@/components/CategoryDonutChart";
 import DailySpendChart from "@/components/DailySpendChart";
 import MonthSelector from "@/components/MonthSelector";
 import ExpenseRow from "@/components/ExpenseRow";
-import { BUDGET_UPDATED_EVENT } from "@/components/SettingsModal";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -26,47 +26,30 @@ export default function DashboardPage() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [prevTotal, setPrevTotal] = useState<number | null>(null);
-  const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const { start, end, lastDay } = monthRange(year, month);
+  const monthStr = `${year}-${pad(month + 1)}-01`;
+  const prevMonthDate = new Date(year, month - 1, 1);
+  const prevRange = monthRange(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const prevMonthDate = new Date(year, month - 1, 1);
-    const prevRange = monthRange(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
-    const monthStr = `${year}-${pad(month + 1)}-01`;
-
-    const [expRes, prevRes, budgetRes] = await Promise.all([
-      fetch(`/api/expenses?from=${start}&to=${end}`),
-      fetch(`/api/expenses?from=${prevRange.start}&to=${prevRange.end}`),
-      fetch(`/api/budget?month=${monthStr}`),
-    ]);
-    const expData = await expRes.json();
-    const prevData = await prevRes.json();
-    const budgetData = await budgetRes.json();
-
-    setExpenses(expData.expenses ?? []);
-    setPrevTotal(
-      (prevData.expenses ?? []).reduce((s: number, e: Expense) => s + Number(e.amount), 0)
-    );
-    setBudgetLimit(budgetData.budget ? Number(budgetData.budget.limit_amount) : null);
+  useEffect(() => {
     setSelectedCategory(null);
-    setLoading(false);
-  }, [year, month, start, end]);
+  }, [year, month]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: expData, isLoading: loading } = useSWR<{ expenses: Expense[] }>(
+    `/api/expenses?from=${start}&to=${end}`
+  );
+  const { data: prevData } = useSWR<{ expenses: Expense[] }>(
+    `/api/expenses?from=${prevRange.start}&to=${prevRange.end}`
+  );
+  const { data: budgetData } = useSWR<{ budget: Budget | null }>(`/api/budget?month=${monthStr}`);
 
-  useEffect(() => {
-    const handler = () => load();
-    window.addEventListener(BUDGET_UPDATED_EVENT, handler);
-    return () => window.removeEventListener(BUDGET_UPDATED_EVENT, handler);
-  }, [load]);
+  const expenses = useMemo(() => expData?.expenses ?? [], [expData]);
+  const budgetLimit = budgetData?.budget ? Number(budgetData.budget.limit_amount) : null;
+  const prevTotal = prevData
+    ? prevData.expenses.reduce((s, e) => s + Number(e.amount), 0)
+    : null;
 
   const total = useMemo(
     () => expenses.reduce((s, e) => s + Number(e.amount), 0),
@@ -98,13 +81,6 @@ export default function DashboardPage() {
   const filteredExpenses = selectedCategory
     ? expenses.filter((e) => e.category === selectedCategory)
     : expenses;
-
-  function handleUpdated(expense: Expense) {
-    setExpenses((prev) => prev.map((e) => (e.id === expense.id ? expense : e)));
-  }
-  function handleDeleted(id: string) {
-    setExpenses((prev) => prev.filter((e) => e.id !== id));
-  }
 
   return (
     <div className="space-y-6">
@@ -178,15 +154,7 @@ export default function DashboardPage() {
             filteredExpenses
               .slice()
               .sort((a, b) => b.spent_on.localeCompare(a.spent_on))
-              .map((e) => (
-                <ExpenseRow
-                  key={e.id}
-                  expense={e}
-                  onUpdated={handleUpdated}
-                  onDeleted={handleDeleted}
-                  showDate
-                />
-              ))
+              .map((e) => <ExpenseRow key={e.id} expense={e} showDate />)
           )}
         </div>
       </div>

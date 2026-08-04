@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { monthStartISO } from "@/lib/format";
-
-export const BUDGET_UPDATED_EVENT = "budget-updated";
+import type { Budget } from "@/lib/types";
+import { revalidateBudget } from "@/lib/revalidate";
 
 export default function SettingsModal({
   open,
@@ -13,24 +14,17 @@ export default function SettingsModal({
   onClose: () => void;
 }) {
   const [limit, setLimit] = useState("");
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const month = monthStartISO();
 
+  const { data, isLoading } = useSWR<{ budget: Budget | null }>(
+    open ? `/api/budget?month=${month}` : null
+  );
+
   useEffect(() => {
-    if (!open) return;
-    setLoading(true);
-    setError(null);
-    fetch(`/api/budget?month=${month}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.budget) setLimit(String(data.budget.limit_amount));
-        else setLimit("");
-      })
-      .catch(() => setError("Could not load budget"))
-      .finally(() => setLoading(false));
-  }, [open, month]);
+    if (data) setLimit(data.budget ? String(data.budget.limit_amount) : "");
+  }, [data]);
 
   if (!open) return null;
 
@@ -49,7 +43,7 @@ export default function SettingsModal({
         body: JSON.stringify({ month, limit_amount: amount }),
       });
       if (!res.ok) throw new Error();
-      window.dispatchEvent(new CustomEvent(BUDGET_UPDATED_EVENT));
+      await revalidateBudget();
       onClose();
     } catch {
       setError("Failed to save budget. Try again.");
@@ -72,7 +66,7 @@ export default function SettingsModal({
           Set your spending limit for this month. No rollover — resets each month.
         </p>
 
-        {loading ? (
+        {isLoading ? (
           <div className="mt-6 h-11 animate-pulse rounded-xl bg-neutral-100" />
         ) : (
           <div className="mt-6">
@@ -99,7 +93,7 @@ export default function SettingsModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={saving || isLoading}
             className="flex-1 rounded-xl bg-neutral-900 py-2.5 font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save"}
