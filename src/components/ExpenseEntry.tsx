@@ -187,7 +187,7 @@ function ConfirmCard({
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-neutral-500">Merchant</label>
+          <label className="text-xs font-medium text-neutral-500">Name</label>
           <input
             type="text"
             value={draft.merchant}
