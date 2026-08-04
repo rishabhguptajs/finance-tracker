@@ -1,69 +1,129 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useState } from "react";
+import type { Expense } from "@/lib/types";
+import { formatINR, monthStartISO, todayISO } from "@/lib/format";
+import ExpenseEntry from "@/components/ExpenseEntry";
+import ExpenseRow from "@/components/ExpenseRow";
+import BudgetBar from "@/components/BudgetBar";
+import BudgetAlertBanner from "@/components/BudgetAlertBanner";
+import { BUDGET_UPDATED_EVENT } from "@/components/SettingsModal";
+
+export default function HomePage() {
+  const [today] = useState(todayISO());
+  const [todayExpenses, setTodayExpenses] = useState<Expense[]>([]);
+  const [loadingToday, setLoadingToday] = useState(true);
+  const [monthSpent, setMonthSpent] = useState<number | null>(null);
+  const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
+
+  const loadToday = useCallback(async () => {
+    setLoadingToday(true);
+    const res = await fetch(`/api/expenses?from=${today}&to=${today}&sortBy=created_at&sortDir=desc`);
+    const data = await res.json();
+    setTodayExpenses(data.expenses ?? []);
+    setLoadingToday(false);
+  }, [today]);
+
+  const loadMonth = useCallback(async () => {
+    const month = monthStartISO();
+    const monthEnd = new Date();
+    const lastDay = new Date(monthEnd.getFullYear(), monthEnd.getMonth() + 1, 0)
+      .toISOString()
+      .slice(0, 10);
+
+    const [expensesRes, budgetRes] = await Promise.all([
+      fetch(`/api/expenses?from=${month}&to=${lastDay}`),
+      fetch(`/api/budget?month=${month}`),
+    ]);
+    const expensesData = await expensesRes.json();
+    const budgetData = await budgetRes.json();
+
+    const total = (expensesData.expenses ?? []).reduce(
+      (sum: number, e: Expense) => sum + Number(e.amount),
+      0
+    );
+    setMonthSpent(total);
+    setBudgetLimit(budgetData.budget ? Number(budgetData.budget.limit_amount) : null);
+  }, []);
+
+  useEffect(() => {
+    loadToday();
+    loadMonth();
+  }, [loadToday, loadMonth]);
+
+  useEffect(() => {
+    const handler = () => loadMonth();
+    window.addEventListener(BUDGET_UPDATED_EVENT, handler);
+    return () => window.removeEventListener(BUDGET_UPDATED_EVENT, handler);
+  }, [loadMonth]);
+
+  function handleSaved(expense: Expense) {
+    if (expense.spent_on === today) {
+      setTodayExpenses((prev) => [expense, ...prev]);
+    }
+    loadMonth();
+  }
+
+  function handleUpdated(expense: Expense) {
+    setTodayExpenses((prev) =>
+      expense.spent_on === today
+        ? prev.map((e) => (e.id === expense.id ? expense : e))
+        : prev.filter((e) => e.id !== expense.id)
+    );
+    loadMonth();
+  }
+
+  function handleDeleted(id: string) {
+    setTodayExpenses((prev) => prev.filter((e) => e.id !== id));
+    loadMonth();
+  }
+
+  const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-6">
+      {monthSpent !== null && <BudgetBar spent={monthSpent} limit={budgetLimit} />}
+      {monthSpent !== null && <BudgetAlertBanner spent={monthSpent} limit={budgetLimit} />}
+
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900">What did you spend on?</h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Type it however feels natural — we&apos;ll figure out the rest.
+        </p>
+        <div className="mt-4">
+          <ExpenseEntry onSaved={handleSaved} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-neutral-800">Today</h2>
+          <span className="text-sm font-medium text-neutral-500">
+            {formatINR(todayTotal)}
+          </span>
         </div>
-      </main>
+        <div className="mt-2 divide-y divide-neutral-100">
+          {loadingToday ? (
+            <div className="space-y-2 py-2">
+              <div className="h-12 animate-pulse rounded-xl bg-neutral-50" />
+              <div className="h-12 animate-pulse rounded-xl bg-neutral-50" />
+            </div>
+          ) : todayExpenses.length === 0 ? (
+            <p className="py-8 text-center text-sm text-neutral-400">
+              No expenses logged today yet.
+            </p>
+          ) : (
+            todayExpenses.map((e) => (
+              <ExpenseRow
+                key={e.id}
+                expense={e}
+                onUpdated={handleUpdated}
+                onDeleted={handleDeleted}
+              />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
