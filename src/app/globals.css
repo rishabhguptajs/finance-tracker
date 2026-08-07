@@ -1,19 +1,98 @@
 @import "tailwindcss";
 
-:root {
-  --background: #faf9f7;
-  --foreground: #1f1b16;
-}
+/* Theme is an explicit choice stored in localStorage, not a media query, so the
+   toggle can override the OS. The inline script in layout.tsx stamps this class
+   before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+/* Plain `@theme` (NOT `@theme inline`): utilities compile to `var(--color-*)`,
+   so redefining these under `.dark` re-themes the whole app at runtime. With
+   `inline` Tailwind bakes the light values into every utility and the dark
+   block silently does nothing. */
+@theme {
+  --color-canvas: #faf9f7;
+  --color-surface: #ffffff;
+  --color-subtle: #f5f4f1;
+  --color-subtle-strong: #e9e7e2;
+
+  --color-ink: #1f1b16;
+  --color-muted: #6f6a63;
+  --color-faint: #a09a92;
+
+  --color-line: #e7e5e1;
+  --color-line-strong: #c5c1ba;
+
+  --color-accent: #1f1b16;
+  --color-accent-hover: #35302a;
+  --color-accent-ink: #ffffff;
+
+  --color-positive: #16a34a;
+  --color-negative: #dc2626;
+  --color-warning: #b8860b;
+  --color-positive-ink: #ffffff;
+
+  --color-positive-soft: rgba(22, 163, 74, 0.12);
+  --color-negative-soft: rgba(220, 38, 38, 0.1);
+  --color-warning-soft: rgba(184, 134, 11, 0.14);
+
   --font-sans: var(--font-inter);
 }
 
+.dark {
+  --color-canvas: #14120f;
+  --color-surface: #1c1a17;
+  --color-subtle: #262320;
+  --color-subtle-strong: #33302b;
+
+  --color-ink: #f4f1ec;
+  --color-muted: #a8a29a;
+  --color-faint: #7c766e;
+
+  --color-line: #302c27;
+  --color-line-strong: #4a453e;
+
+  --color-accent: #f4f1ec;
+  --color-accent-hover: #ddd8d1;
+  --color-accent-ink: #1c1a17;
+
+  --color-positive: #4ade80;
+  --color-negative: #f87171;
+  --color-warning: #eab308;
+  --color-positive-ink: #14120f;
+
+  --color-positive-soft: rgba(74, 222, 128, 0.14);
+  --color-negative-soft: rgba(248, 113, 113, 0.14);
+  --color-warning-soft: rgba(234, 179, 8, 0.14);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  /* Kills the rubber-band scroll past the ends, which is the clearest tell that
+     an installed PWA is really a web page. */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Removes the 300ms double-tap-to-zoom delay on controls without disabling
+   pinch zoom, which would be an accessibility regression. */
+button,
+a,
+[role="button"],
+input,
+select,
+summary {
+  touch-action: manipulation;
+}
+
+/* Native controls (date pickers, selects) follow the theme instead of staying
+   stuck on a white system widget. */
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 @keyframes fade-in {
