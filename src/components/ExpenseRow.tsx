@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { Category, Expense } from "@/lib/types";
-import { CATEGORIES } from "@/lib/types";
+import type { Category, Expense, PaymentMethod } from "@/lib/types";
+import { CATEGORIES, PAYMENT_METHODS } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
 import { formatDateDDMMYYYY, formatINR } from "@/lib/format";
 import { revalidateExpenses } from "@/lib/revalidate";
@@ -20,6 +20,9 @@ export default function ExpenseRow({
   const [merchant, setMerchant] = useState(expense.merchant ?? "");
   const [category, setCategory] = useState<Category>(expense.category);
   const [spentOn, setSpentOn] = useState(expense.spent_on);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">(
+    expense.payment_method ?? ""
+  );
   const [busy, setBusy] = useState(false);
 
   async function handleSave() {
@@ -33,6 +36,7 @@ export default function ExpenseRow({
           merchant,
           category,
           spent_on: spentOn,
+          payment_method: paymentMethod || null,
         }),
       });
       if (res.ok) {
@@ -57,30 +61,30 @@ export default function ExpenseRow({
 
   if (editing) {
     return (
-      <div className="rounded-xl bg-neutral-50 p-3">
+      <div className="rounded-xl bg-subtle p-3">
         <div className="grid grid-cols-2 gap-2">
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-line px-2 py-1.5 text-sm"
           />
           <input
             type="date"
             value={spentOn}
             onChange={(e) => setSpentOn(e.target.value)}
-            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-line px-2 py-1.5 text-sm"
           />
           <input
             type="text"
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
-            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-line px-2 py-1.5 text-sm"
           />
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as Category)}
-            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-line px-2 py-1.5 text-sm"
             style={{ color: CATEGORY_STYLES[category].hex }}
           >
             {CATEGORIES.map((c) => (
@@ -89,18 +93,30 @@ export default function ExpenseRow({
               </option>
             ))}
           </select>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod | "")}
+            className="col-span-2 rounded-lg border border-line px-2 py-1.5 text-sm"
+          >
+            <option value="">Payment method — not set</option>
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="mt-2 flex gap-2">
           <button
             onClick={() => setEditing(false)}
-            className="flex-1 rounded-lg border border-neutral-200 py-1.5 text-sm font-medium text-neutral-600"
+            className="flex-1 rounded-lg border border-line py-1.5 text-sm font-medium text-muted"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={busy}
-            className="flex-1 rounded-lg bg-neutral-900 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+            className="flex-1 rounded-lg bg-accent py-1.5 text-sm font-medium text-accent-ink disabled:opacity-50"
           >
             {busy ? "…" : "Save"}
           </button>
@@ -110,25 +126,30 @@ export default function ExpenseRow({
   }
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-xl px-1 py-2.5 hover:bg-neutral-50">
+    <div className="group flex items-center justify-between gap-3 rounded-xl px-1 py-2.5 hover:bg-subtle">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-medium text-neutral-800">
+          <span className="truncate font-medium text-ink">
             {expense.merchant || "Unknown"}
           </span>
           <CategoryBadge category={expense.category} />
+          {expense.payment_method && (
+            <span className="shrink-0 rounded-full bg-subtle px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+              {expense.payment_method}
+            </span>
+          )}
         </div>
-        <p className="mt-0.5 truncate text-xs text-neutral-400">
+        <p className="mt-0.5 truncate text-xs text-faint">
           {showDate ? `${formatDateDDMMYYYY(expense.spent_on)} · ` : ""}
           {expense.raw_input}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <span className="font-semibold text-neutral-900">{formatINR(expense.amount)}</span>
+        <span className="font-semibold text-ink">{formatINR(expense.amount)}</span>
         <div className="flex opacity-0 transition-opacity group-hover:opacity-100">
           <button
             onClick={() => setEditing(true)}
-            className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+            className="rounded-lg p-1.5 text-faint hover:bg-subtle hover:text-ink"
             aria-label="Edit"
           >
             ✏️
@@ -136,7 +157,7 @@ export default function ExpenseRow({
           <button
             onClick={handleDelete}
             disabled={busy}
-            className="rounded-lg p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-lg p-1.5 text-faint hover:bg-negative-soft hover:text-negative"
             aria-label="Delete"
           >
             🗑️

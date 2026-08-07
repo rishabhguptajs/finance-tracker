@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { CATEGORIES } from "@/lib/types";
+import { CATEGORIES, PAYMENT_METHODS } from "@/lib/types";
 
 export async function PATCH(
   request: Request,
@@ -19,6 +19,12 @@ export async function PATCH(
     updates.category = body.category;
   }
   if (body.spent_on !== undefined) updates.spent_on = body.spent_on;
+  if (body.payment_method !== undefined) {
+    if (body.payment_method && !PAYMENT_METHODS.includes(body.payment_method)) {
+      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
+    }
+    updates.payment_method = body.payment_method || null;
+  }
 
   const { data, error } = await supabase
     .from("expenses")
