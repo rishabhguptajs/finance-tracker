@@ -1,37 +1,46 @@
 import { GoogleGenAI } from "@google/genai";
-import { CATEGORIES, type ExtractedExpense } from "./types";
+import { CATEGORIES, PAYMENT_METHODS, type ExtractedEntry, type PaymentMethod } from "./types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 function buildPrompt(input: string, todayDDMMYYYY: string): string {
-  return `Extract structured data from this expense entry: "${input}"
+  return `Extract structured data from this money entry: "${input}"
 Today's date is ${todayDDMMYYYY} in DD/MM/YYYY format.
-Categories (pick exactly one): Food, Transport, Shopping, Bills, Subscriptions, Entertainment, Health, Groceries, Other
+Categories (pick exactly one, expenses only): ${CATEGORIES.join(", ")}
+Payment methods (pick exactly one, or null if not stated): ${PAYMENT_METHODS.join(", ")}
 
-The entry may describe ONE expense or MULTIPLE separate expenses (e.g. separated by commas, "and", newlines, or several distinct amounts mentioned in one sentence). Identify every distinct expense mentioned.
+The entry may describe ONE item or MULTIPLE separate items (e.g. separated by commas, "and", newlines, or several distinct amounts mentioned in one sentence). Identify every distinct item mentioned.
 
-Return ONLY valid JSON, no markdown formatting: a JSON array where each element is one expense, in the order mentioned:
+Each item is either money going OUT ("expense") or money coming IN ("income").
+Treat salary, freelance payment, refund, cashback, interest, dividend, reimbursement, or anything described as received/credited/earned as "income". Everything else is an "expense".
+
+Return ONLY valid JSON, no markdown formatting: a JSON array where each element is one item, in the order mentioned:
 [
   {
+    "kind": "expense" | "income",
     "amount": number,
     "merchant": string,
     "category": string,
-    "date": "YYYY-MM-DD"
+    "date": "YYYY-MM-DD",
+    "payment_method": string | null
   }
 ]
-If there is only one expense, return an array with a single object.
-If no date is mentioned for an expense, use today's date.
-If merchant is unclear, make a reasonable guess from context or use "Unknown".`;
+If there is only one item, return an array with a single object.
+If no date is mentioned for an item, use today's date.
+For income, "merchant" is the source (employer, client, platform) and "category" should be "Other".
+If merchant is unclear, make a reasonable guess from context or use "Unknown".
+Only set "payment_method" when the text actually indicates it (e.g. "paid by card", "upi", "cash", "gpay" -> UPI). Otherwise use null.`;
 }
 
-function parseOne(raw: unknown): ExtractedExpense | null {
+function parseOne(raw: unknown): ExtractedEntry | null {
   if (typeof raw !== "object" || raw === null) return null;
   const result = raw as Record<string, unknown>;
-  if (!("amount" in result) || !("category" in result) || !("date" in result)) return null;
+  if (!("amount" in result) || !("date" in result)) return null;
 
+  const kind = result.kind === "income" ? "income" : "expense";
   const amount = Number(result.amount);
   const category = CATEGORIES.includes(result.category as never)
-    ? (result.category as ExtractedExpense["category"])
+    ? (result.category as ExtractedEntry["category"])
     : "Other";
   const merchant =
     typeof result.merchant === "string" && result.merchant.trim()
@@ -41,16 +50,19 @@ function parseOne(raw: unknown): ExtractedExpense | null {
     typeof result.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(result.date)
       ? result.date
       : null;
+  const payment_method = PAYMENT_METHODS.includes(result.payment_method as never)
+    ? (result.payment_method as PaymentMethod)
+    : null;
 
   if (!Number.isFinite(amount) || amount <= 0 || !date) return null;
 
-  return { amount, merchant, category, date };
+  return { kind, amount, merchant, category, date, payment_method };
 }
 
-export async function extractExpenses(
+export async function extractEntries(
   input: string,
   todayDDMMYYYY: string
-): Promise<ExtractedExpense[]> {
+): Promise<ExtractedEntry[]> {
   const prompt = buildPrompt(input, todayDDMMYYYY);
 
   const response = await ai.models.generateContent({
@@ -69,10 +81,10 @@ export async function extractExpenses(
   }
 
   const rawItems = Array.isArray(parsed) ? parsed : [parsed];
-  const items = rawItems.map(parseOne).filter((e): e is ExtractedExpense => e !== null);
+  const items = rawItems.map(parseOne).filter((e): e is ExtractedEntry => e !== null);
 
   if (items.length === 0) {
-    throw new Error("Gemini response had no valid expenses");
+    throw new Error("Gemini response had no valid entries");
   }
 
   return items;

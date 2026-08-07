@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { extractExpenses } from "@/lib/gemini";
+import { extractEntries } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   try {
@@ -14,13 +14,13 @@ export async function POST(request: Request) {
       now.getMonth() + 1
     ).padStart(2, "0")}/${now.getFullYear()}`;
 
-    const extracted = await extractExpenses(input.trim(), todayDDMMYYYY);
+    const extracted = await extractEntries(input.trim(), todayDDMMYYYY);
 
     return NextResponse.json({ extracted });
   } catch (err) {
     console.error("Extraction error:", err);
     return NextResponse.json(
-      { error: "Failed to extract expense data. Please try again or enter manually." },
+      { error: "Failed to read that entry. Please try again or enter manually." },
       { status: 500 }
     );
   }

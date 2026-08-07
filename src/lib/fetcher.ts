@@ -8,4 +8,5 @@ export async function fetcher<T>(url: string): Promise<T> {
 }
 
 export const EXPENSES_PREFIX = "/api/expenses";
+export const INCOME_PREFIX = "/api/income";
 export const BUDGET_PREFIX = "/api/budget";
