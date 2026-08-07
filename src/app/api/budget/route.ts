@@ -30,9 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "month and limit_amount are required" }, { status: 400 });
   }
 
+  const amount = Number(limit_amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return NextResponse.json({ error: "limit_amount must be a positive number" }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from("budget")
-    .upsert({ month, limit_amount: Number(limit_amount) }, { onConflict: "month" })
+    .upsert({ month, limit_amount: amount }, { onConflict: "month" })
     .select()
     .single();
 
@@ -41,4 +46,21 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ budget: data });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const month = searchParams.get("month");
+
+  if (!month) {
+    return NextResponse.json({ error: "month query param required (YYYY-MM-01)" }, { status: 400 });
+  }
+
+  const { error } = await supabase.from("budget").delete().eq("month", month);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }
