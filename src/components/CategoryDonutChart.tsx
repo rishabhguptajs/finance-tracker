@@ -3,6 +3,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { Category } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
+import { useChartTheme } from "@/lib/chart-theme";
 import { formatINR } from "@/lib/format";
 
 interface Slice {
@@ -19,11 +20,12 @@ export default function CategoryDonutChart({
   selected: Category | null;
   onSelect: (c: Category | null) => void;
 }) {
+  const chart = useChartTheme();
   const total = data.reduce((s, d) => s + d.total, 0);
 
   if (data.length === 0) {
     return (
-      <div className="flex h-56 items-center justify-center text-sm text-neutral-400">
+      <div className="flex h-56 items-center justify-center text-sm text-faint">
         No spending yet this month.
       </div>
     );
@@ -52,18 +54,14 @@ export default function CategoryDonutChart({
                 fill={CATEGORY_STYLES[slice.category].hex}
                 opacity={selected && selected !== slice.category ? 0.3 : 1}
                 cursor="pointer"
-                stroke="white"
+                stroke={chart.surface}
                 strokeWidth={2}
               />
             ))}
           </Pie>
           <Tooltip
             formatter={(value, name) => [formatINR(Number(value)), String(name)]}
-            contentStyle={{
-              borderRadius: 12,
-              border: "none",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            }}
+            contentStyle={chart.tooltip}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -72,7 +70,7 @@ export default function CategoryDonutChart({
           <button
             key={slice.category}
             onClick={() => onSelect(selected === slice.category ? null : slice.category)}
-            className="flex items-center gap-1.5 text-xs font-medium transition-opacity"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted transition-opacity"
             style={{ opacity: selected && selected !== slice.category ? 0.4 : 1 }}
           >
             <span
@@ -80,7 +78,7 @@ export default function CategoryDonutChart({
               style={{ backgroundColor: CATEGORY_STYLES[slice.category].hex }}
             />
             {slice.category}
-            <span className="text-neutral-400">
+            <span className="text-faint">
               {total > 0 ? Math.round((slice.total / total) * 100) : 0}%
             </span>
           </button>

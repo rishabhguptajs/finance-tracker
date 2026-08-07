@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { useChartTheme } from "@/lib/chart-theme";
 import { formatINR } from "@/lib/format";
 
 interface DayPoint {
@@ -9,9 +10,11 @@ interface DayPoint {
 }
 
 export default function DailySpendChart({ data }: { data: DayPoint[] }) {
+  const chart = useChartTheme();
+
   if (data.every((d) => d.total === 0)) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-neutral-400">
+      <div className="flex h-48 items-center justify-center text-sm text-faint">
         No daily data yet.
       </div>
     );
@@ -22,21 +25,18 @@ export default function DailySpendChart({ data }: { data: DayPoint[] }) {
       <BarChart data={data} barCategoryGap={2}>
         <XAxis
           dataKey="day"
-          tick={{ fontSize: 11, fill: "#a3a3a3" }}
+          tick={chart.axisTick}
           axisLine={false}
           tickLine={false}
           interval={2}
         />
         <Tooltip
+          cursor={{ fill: chart.cursorFill }}
           formatter={(value) => [formatINR(Number(value)), "Spent"]}
           labelFormatter={(label) => `Day ${label}`}
-          contentStyle={{
-            borderRadius: 12,
-            border: "none",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          }}
+          contentStyle={chart.tooltip}
         />
-        <Bar dataKey="total" fill="#f97316" radius={[6, 6, 0, 0]} maxBarSize={18} />
+        <Bar dataKey="total" fill={chart.spend} radius={[4, 4, 0, 0]} maxBarSize={18} />
       </BarChart>
     </ResponsiveContainer>
   );
