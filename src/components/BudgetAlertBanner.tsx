@@ -17,8 +17,8 @@ export default function BudgetAlertBanner({
 
   return (
     <div
-      className={`animate-fade-in rounded-2xl px-4 py-3 text-sm font-medium shadow-sm ${
-        over ? "bg-red-50 text-red-700 ring-1 ring-red-200" : "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200"
+      className={`animate-fade-in rounded-2xl px-4 py-3 text-sm font-medium shadow-sm ring-1 ring-line ${
+        over ? "bg-negative-soft text-negative" : "bg-warning-soft text-warning"
       }`}
     >
       {over

@@ -47,11 +47,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen flex-1 items-center justify-center px-4">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-lg ring-1 ring-black/5"
+          className="w-full max-w-sm rounded-3xl bg-surface p-6 shadow-lg ring-1 ring-line"
         >
           <div className="text-3xl">💸</div>
-          <h1 className="mt-2 text-lg font-semibold text-neutral-900">PaisaTrack</h1>
-          <p className="mt-1 text-sm text-neutral-500">Enter the password to continue.</p>
+          <h1 className="mt-2 text-lg font-semibold text-ink">PaisaTrack</h1>
+          <p className="mt-1 text-sm text-muted">Enter the password to continue.</p>
           <input
             type="password"
             inputMode="numeric"
@@ -59,13 +59,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
             placeholder="Password"
-            className="mt-4 w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-base outline-none focus:border-neutral-400"
+            className="mt-4 w-full rounded-xl border border-line px-4 py-2.5 text-base outline-none focus:border-line-strong"
           />
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-2 text-sm text-negative">{error}</p>}
           <button
             type="submit"
             disabled={checking || !password}
-            className="mt-4 w-full rounded-xl bg-neutral-900 py-2.5 font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="mt-4 w-full rounded-xl bg-accent py-2.5 font-medium text-accent-ink hover:bg-accent-hover disabled:opacity-50"
           >
             {checking ? "Checking…" : "Unlock"}
           </button>

@@ -32,18 +32,18 @@ export default function MonthSelector({
     <div className="flex items-center gap-3">
       <button
         onClick={prev}
-        className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100"
+        className="rounded-full p-2 text-muted hover:bg-subtle"
         aria-label="Previous month"
       >
         ←
       </button>
-      <span className="w-36 text-center font-semibold text-neutral-800">
+      <span className="w-36 text-center font-semibold text-ink">
         {MONTH_NAMES[month]} {year}
       </span>
       <button
         onClick={next}
         disabled={isCurrentMonth}
-        className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
+        className="rounded-full p-2 text-muted hover:bg-subtle disabled:opacity-30"
         aria-label="Next month"
       >
         →
