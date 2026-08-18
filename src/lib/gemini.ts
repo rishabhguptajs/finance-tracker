@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, createPartFromBase64 } from "@google/genai";
 import { CATEGORIES, PAYMENT_METHODS, type ExtractedEntry, type PaymentMethod } from "./types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -88,4 +88,21 @@ export async function extractEntries(
   }
 
   return items;
+}
+
+export async function transcribeAudio(base64Audio: string, mimeType: string): Promise<string> {
+  const response = await ai.models.generateContent({
+    model: "gemini-3.1-flash-lite",
+    contents: [
+      "Transcribe this audio exactly as spoken. Return only the raw transcription, no commentary, no markdown formatting.",
+      createPartFromBase64(base64Audio, mimeType),
+    ],
+  });
+
+  const text = (response.text ?? "").trim();
+  if (!text) {
+    throw new Error("Gemini returned an empty transcription");
+  }
+
+  return text;
 }
