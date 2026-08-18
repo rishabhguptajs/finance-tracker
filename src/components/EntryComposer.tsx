@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   CATEGORIES,
   PAYMENT_METHODS,
@@ -11,6 +11,23 @@ import {
 import { CATEGORY_STYLES } from "@/lib/categories";
 import { revalidateExpenses, revalidateIncome } from "@/lib/revalidate";
 
+const MIME_CANDIDATES = ["audio/webm", "audio/mp4", "audio/ogg"];
+
+function pickMimeType(): string | undefined {
+  if (typeof MediaRecorder === "undefined") return undefined;
+  return MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
 export default function EntryComposer() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,13 +36,68 @@ export default function EntryComposer() {
   const [index, setIndex] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const draft = queue ? queue[index] : null;
   const total = queue?.length ?? 0;
+  const busy = loading || recording || transcribing;
+  const micSupported =
+    typeof window !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof MediaRecorder !== "undefined";
+
+  async function handleMicClick() {
+    if (recording) {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = pickMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        const blob = new Blob(chunksRef.current, {
+          type: recorder.mimeType || mimeType || "audio/webm",
+        });
+        if (blob.size === 0) return;
+        setTranscribing(true);
+        try {
+          const base64 = await blobToBase64(blob);
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audio: base64, mimeType: blob.type }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Transcription failed");
+          setInput((prev) => (prev.trim() ? `${prev.trim()} ${data.text}` : data.text));
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Something went wrong");
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch {
+      setError("Couldn't access the microphone. Check your browser permissions.");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || busy) return;
     setLoading(true);
     setError(null);
     try {
@@ -114,21 +186,61 @@ export default function EntryComposer() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="450 swiggy dinner, cab to office 180…"
-          disabled={loading || !!draft}
+          disabled={busy || !!draft}
           className="w-full rounded-2xl border border-line bg-surface px-5 py-4 text-base shadow-sm outline-none placeholder:text-faint focus:border-line-strong disabled:opacity-60"
         />
+        {micSupported && (
+          <button
+            type="button"
+            onClick={handleMicClick}
+            disabled={transcribing || loading || !!draft}
+            aria-label={recording ? "Stop recording" : "Record an entry"}
+            className={`shrink-0 rounded-2xl px-4 py-4 shadow-sm transition disabled:opacity-40 ${
+              recording
+                ? "animate-pulse bg-negative text-white"
+                : "border border-line bg-surface text-muted hover:bg-subtle"
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+              <path d="M12 18v4" />
+              <path d="M8 22h8" />
+            </svg>
+          </button>
+        )}
         <button
           type="submit"
-          disabled={loading || !!draft || !input.trim()}
+          disabled={busy || !!draft || !input.trim()}
           className="shrink-0 rounded-2xl bg-accent px-5 py-4 font-medium text-accent-ink shadow-sm transition hover:bg-accent-hover disabled:opacity-40"
         >
           {loading ? "…" : "Add"}
         </button>
       </form>
-      <p className="mt-1.5 px-1 text-xs text-faint">
-        Tip: log several at once, and income too — “450 swiggy, netflix 500 on card, salary 90000
-        credited”
-      </p>
+      {recording || transcribing ? (
+        <p className="mt-1.5 flex items-center gap-1.5 px-1 text-xs text-muted">
+          {recording && (
+            <>
+              <span className="h-2 w-2 animate-pulse rounded-full bg-negative" />
+              Listening…
+            </>
+          )}
+          {transcribing && "Transcribing…"}
+        </p>
+      ) : (
+        <p className="mt-1.5 px-1 text-xs text-faint">
+          Tip: log several at once, and income too — “450 swiggy, netflix 500 on card, salary 90000
+          credited”
+        </p>
+      )}
 
       {error && !draft && <p className="mt-2 text-sm text-negative">{error}</p>}
 
