@@ -10,6 +10,8 @@ import {
 } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
 import { revalidateExpenses, revalidateIncome } from "@/lib/revalidate";
+import { Button, Chip, ChipRow, Field, inputClass } from "./ui";
+import { MicIcon } from "./icons";
 
 const MIME_CANDIDATES = ["audio/webm", "audio/mp4", "audio/ogg"];
 
@@ -181,52 +183,46 @@ export default function EntryComposer() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      {/* Stacked rather than one cramped row: at 375px a three-across layout
+          left the text field about 200px wide, so the placeholder truncated
+          before you'd typed anything. Full-width field, controls beneath. */}
+      <form onSubmit={handleSubmit} className="space-y-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="450 swiggy dinner, cab to office 180…"
           disabled={busy || !!draft}
-          className="w-full rounded-2xl border border-line bg-surface px-5 py-4 text-base shadow-sm outline-none placeholder:text-faint focus:border-line-strong disabled:opacity-60"
+          enterKeyHint="done"
+          className={`${inputClass} min-h-[52px] shadow-[var(--shadow-card)]`}
         />
-        {micSupported && (
-          <button
-            type="button"
-            onClick={handleMicClick}
-            disabled={transcribing || loading || !!draft}
-            aria-label={recording ? "Stop recording" : "Record an entry"}
-            className={`shrink-0 rounded-2xl px-4 py-4 shadow-sm transition disabled:opacity-40 ${
-              recording
-                ? "animate-pulse bg-negative text-white"
-                : "border border-line bg-surface text-muted hover:bg-subtle"
-            }`}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
+        <div className="flex gap-2">
+          {micSupported && (
+            <button
+              type="button"
+              onClick={handleMicClick}
+              disabled={transcribing || loading || !!draft}
+              aria-label={recording ? "Stop recording" : "Record an entry"}
+              className={`press flex min-h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl transition disabled:pointer-events-none disabled:opacity-40 ${
+                recording
+                  ? "bg-negative text-white"
+                  : "border border-line bg-surface text-muted hover:bg-subtle"
+              }`}
             >
-              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
-              <path d="M12 18v4" />
-              <path d="M8 22h8" />
-            </svg>
-          </button>
-        )}
-        <button
-          type="submit"
-          disabled={busy || !!draft || !input.trim()}
-          className="shrink-0 rounded-2xl bg-accent px-5 py-4 font-medium text-accent-ink shadow-sm transition hover:bg-accent-hover disabled:opacity-40"
-        >
-          {loading ? "…" : "Add"}
-        </button>
+              <MicIcon className="h-5 w-5" />
+            </button>
+          )}
+          <Button
+            type="submit"
+            disabled={busy || !!draft || !input.trim()}
+            full
+            className="min-h-[52px]"
+          >
+            {loading ? "Reading…" : "Add"}
+          </Button>
+        </div>
       </form>
       {recording || transcribing ? (
-        <p className="mt-1.5 flex items-center gap-1.5 px-1 text-xs text-muted">
+        <p className="mt-2 flex items-center gap-1.5 px-1 text-footnote text-muted">
           {recording && (
             <>
               <span className="h-2 w-2 animate-pulse rounded-full bg-negative" />
@@ -236,7 +232,7 @@ export default function EntryComposer() {
           {transcribing && "Transcribing…"}
         </p>
       ) : (
-        <p className="mt-1.5 px-1 text-xs text-faint">
+        <p className="mt-2 px-1 text-footnote text-faint">
           Tip: log several at once, and income too — “450 swiggy, netflix 500 on card, salary 90000
           credited”
         </p>
@@ -279,14 +275,14 @@ function ConfirmCard({
   const isIncome = draft.kind === "income";
 
   return (
-    <div className="mt-3 animate-fade-in rounded-2xl bg-surface p-5 shadow-md ring-1 ring-line">
+    <div className="animate-fade-in mt-3 rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-5">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex rounded-full bg-subtle p-0.5 text-xs font-semibold">
+        <div className="flex rounded-full bg-subtle p-1 text-footnote font-semibold">
           {(["expense", "income"] as const).map((kind) => (
             <button
               key={kind}
               onClick={() => onChange({ ...draft, kind })}
-              className={`rounded-full px-3 py-1.5 capitalize transition-colors ${
+              className={`press min-h-[36px] rounded-full px-3.5 transition-colors ${
                 draft.kind === kind
                   ? kind === "income"
                     ? "bg-positive text-positive-ink"
@@ -299,117 +295,117 @@ function ConfirmCard({
           ))}
         </div>
         {step && (
-          <span className="rounded-full bg-subtle px-2.5 py-1 text-xs font-semibold text-muted">
+          <span className="tnum shrink-0 rounded-full bg-subtle px-2.5 py-1 text-footnote font-semibold text-muted">
             {step.index + 1} of {step.total}
           </span>
         )}
       </div>
       {step && step.total > 1 && (
-        <p className="mt-2 text-xs text-faint">
+        <p className="mt-2 text-footnote text-faint">
           Found {step.total} entries in what you typed — confirm each one below.
         </p>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-medium text-muted">Amount (₹)</label>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Field label="Amount (₹)">
           <input
             type="number"
             inputMode="decimal"
             value={draft.amount}
             onChange={(e) => onChange({ ...draft, amount: Number(e.target.value) })}
-            className="mt-1 w-full rounded-xl border border-line px-3 py-2 font-medium outline-none focus:border-line-strong"
+            className={`${inputClass} tnum font-medium`}
           />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted">Date</label>
+        </Field>
+        <Field label="Date">
           <input
             type="date"
             value={draft.date}
             onChange={(e) => onChange({ ...draft, date: e.target.value })}
-            className="mt-1 w-full rounded-xl border border-line px-3 py-2 font-medium outline-none focus:border-line-strong"
+            className={inputClass}
           />
-        </div>
-        <div className={isIncome ? "col-span-2" : undefined}>
-          <label className="text-xs font-medium text-muted">
-            {isIncome ? "Source" : "Name"}
-          </label>
+        </Field>
+        <Field label={isIncome ? "Source" : "Name"} className="col-span-2">
           <input
             type="text"
             value={draft.merchant}
             onChange={(e) => onChange({ ...draft, merchant: e.target.value })}
-            className="mt-1 w-full rounded-xl border border-line px-3 py-2 font-medium outline-none focus:border-line-strong"
+            className={inputClass}
           />
-        </div>
-        {!isIncome && (
-          <div>
-            <label className="text-xs font-medium text-muted">Category</label>
-            <select
-              value={draft.category}
-              onChange={(e) => onChange({ ...draft, category: e.target.value as Category })}
-              className="mt-1 w-full rounded-xl border border-line px-3 py-2 font-medium outline-none focus:border-line-strong"
-              style={{ color: CATEGORY_STYLES[draft.category].hex }}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        </Field>
       </div>
 
       {!isIncome && (
-        <div className="mt-3">
-          <label className="text-xs font-medium text-muted">Paid with</label>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {PAYMENT_METHODS.map((method) => {
-              const active = draft.payment_method === method;
-              return (
-                <button
-                  key={method}
-                  onClick={() =>
-                    onChange({ ...draft, payment_method: active ? null : (method as PaymentMethod) })
-                  }
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-accent text-accent-ink"
-                      : "bg-subtle text-muted hover:bg-subtle-strong"
-                  }`}
-                >
-                  {method}
-                </button>
-              );
-            })}
+        <>
+          {/* Chips rather than a <select>: on a phone a select opens a modal
+              picker for what is a one-tap choice, and it hides the other
+              options behind an extra interaction. */}
+          <div className="mt-4">
+            <span className="text-footnote font-medium text-muted">Category</span>
+            <div className="mt-1.5">
+              <ChipRow>
+                {CATEGORIES.map((c) => (
+                  <Chip
+                    key={c}
+                    active={draft.category === c}
+                    onClick={() => onChange({ ...draft, category: c as Category })}
+                    style={
+                      draft.category === c
+                        ? undefined
+                        : { color: CATEGORY_STYLES[c].hex }
+                    }
+                  >
+                    {c}
+                  </Chip>
+                ))}
+              </ChipRow>
+            </div>
           </div>
-        </div>
+
+          <div className="mt-4">
+            <span className="text-footnote font-medium text-muted">Paid with</span>
+            <div className="mt-1.5">
+              <ChipRow>
+                {PAYMENT_METHODS.map((method) => {
+                  const active = draft.payment_method === method;
+                  return (
+                    <Chip
+                      key={method}
+                      active={active}
+                      onClick={() =>
+                        onChange({
+                          ...draft,
+                          payment_method: active ? null : (method as PaymentMethod),
+                        })
+                      }
+                    >
+                      {method}
+                    </Chip>
+                  );
+                })}
+              </ChipRow>
+            </div>
+          </div>
+        </>
       )}
 
-      {error && <p className="mt-3 text-sm text-negative">{error}</p>}
+      {error && <p className="mt-3 text-subhead text-negative">{error}</p>}
 
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={onDiscard}
-          className="flex-1 rounded-xl border border-line py-2.5 font-medium text-muted hover:bg-subtle"
-        >
+      <div className="mt-5 flex gap-2">
+        <Button variant="secondary" onClick={onDiscard} full>
           {step && step.index + 1 < step.total ? "Skip" : "Discard"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant={isIncome ? "positive" : "primary"}
           onClick={onSave}
           disabled={saving}
-          className={`flex-1 rounded-xl py-2.5 font-medium disabled:opacity-50 ${
-            isIncome
-              ? "bg-positive text-positive-ink hover:opacity-90"
-              : "bg-accent text-accent-ink hover:bg-accent-hover"
-          }`}
+          full
         >
           {saving
             ? "Saving…"
             : step && step.index + 1 < step.total
               ? "Save & next"
               : "Save"}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import ExpenseRow from "@/components/ExpenseRow";
 import IncomeRow from "@/components/IncomeRow";
 import BudgetBar from "@/components/BudgetBar";
 import BudgetAlertBanner from "@/components/BudgetAlertBanner";
+import { Card } from "@/components/ui";
 
 export default function HomePage() {
   const [today] = useState(todayISO());
@@ -41,8 +42,8 @@ export default function HomePage() {
       {monthSpent !== null && <BudgetAlertBanner spent={monthSpent} limit={budgetLimit} />}
 
       <div>
-        <h1 className="text-2xl font-bold text-ink">What did you spend on?</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-large-title text-ink">What did you spend on?</h1>
+        <p className="mt-1.5 text-subhead text-muted">
           Type it however feels natural — we&apos;ll figure out the rest.
         </p>
         <div className="mt-4">
@@ -50,21 +51,21 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-ink">Today</h2>
-          <span className="text-sm font-medium text-muted">
+      <Card className="p-3 sm:p-4">
+        <div className="flex items-center justify-between px-2 pt-1">
+          <h2 className="text-section text-ink">Today</h2>
+          <span className="tnum text-subhead font-medium text-muted">
             {formatINR(todayTotal)}
           </span>
         </div>
-        <div className="mt-2 divide-y divide-line">
+        <div className="mt-1.5 divide-y divide-line">
           {loadingToday ? (
             <div className="space-y-2 py-2">
-              <div className="h-12 animate-pulse rounded-xl bg-subtle" />
-              <div className="h-12 animate-pulse rounded-xl bg-subtle" />
+              <div className="h-14 animate-pulse rounded-xl bg-subtle" />
+              <div className="h-14 animate-pulse rounded-xl bg-subtle" />
             </div>
           ) : isEmpty ? (
-            <p className="py-8 text-center text-sm text-faint">
+            <p className="py-10 text-center text-subhead text-faint">
               Nothing logged today yet.
             </p>
           ) : (
@@ -78,7 +79,7 @@ export default function HomePage() {
             </>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
