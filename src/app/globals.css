@@ -36,6 +36,44 @@
   --color-warning-soft: rgba(184, 134, 11, 0.14);
 
   --font-sans: var(--font-inter);
+
+  /* An explicit type scale, so headings stop all being `text-2xl` and the eye
+     gets a real hierarchy to follow. Sizes track iOS's: a large title that
+     actually dominates, then a clear drop to section and body text. Negative
+     tracking on the big sizes keeps Inter from looking loose when scaled up. */
+  --text-large-title: 2.125rem;
+  --text-large-title--line-height: 2.4rem;
+  --text-large-title--letter-spacing: -0.022em;
+  --text-large-title--font-weight: 700;
+
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.85rem;
+  --text-title--letter-spacing: -0.018em;
+  --text-title--font-weight: 650;
+
+  --text-section: 1.0625rem;
+  --text-section--line-height: 1.4rem;
+  --text-section--letter-spacing: -0.01em;
+  --text-section--font-weight: 600;
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.45rem;
+  --text-body--letter-spacing: -0.01em;
+
+  --text-subhead: 0.9375rem;
+  --text-subhead--line-height: 1.25rem;
+
+  --text-footnote: 0.8125rem;
+  --text-footnote--line-height: 1.1rem;
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* One elevation, used everywhere. A soft, mostly-vertical shadow reads as a
+     surface lifting off the canvas; Tailwind's default `shadow-sm` ring combo
+     reads as a generic card. */
+  --shadow-card: 0 1px 2px rgba(31, 27, 22, 0.04), 0 4px 16px -6px rgba(31, 27, 22, 0.08);
+  --shadow-sheet: 0 -8px 40px -12px rgba(0, 0, 0, 0.28);
 }
 
 .dark {
@@ -63,6 +101,12 @@
   --color-positive-soft: rgba(74, 222, 128, 0.14);
   --color-negative-soft: rgba(248, 113, 113, 0.14);
   --color-warning-soft: rgba(234, 179, 8, 0.14);
+
+  /* Shadows carry almost no weight on a dark canvas, so elevation comes from a
+     lighter surface instead; keeping the light values here would just smear the
+     edges without ever reading as depth. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px -6px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 -8px 40px -12px rgba(0, 0, 0, 0.7);
 }
 
 body {
@@ -95,6 +139,63 @@ summary {
   color-scheme: dark;
 }
 
+/* iOS Safari zooms the whole page when you focus a control smaller than 16px,
+   and never zooms back out. Enforcing it here fixes every input at once —
+   including ones styled `text-sm` for density — rather than leaving a trap for
+   the next form someone adds. Desktop keeps the smaller sizes. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Money should line up down a column. Proportional digits make a list of
+   amounts ripple; tabular ones hold a grid. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Touch has no hover, so a press is the only feedback a tap can get. Scaling
+   the control itself (rather than flashing a background) is what makes a
+   button feel physical. Pointer devices keep their hover styles instead. */
+.press {
+  transition:
+    transform 0.14s cubic-bezier(0.2, 0, 0.2, 1),
+    opacity 0.14s ease-out,
+    background-color 0.14s ease-out;
+}
+
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* Full-width bars look broken scaling from the center; they dip instead. */
+.press-subtle:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled),
+  .press-subtle:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Chip rows scroll sideways rather than wrapping into a wall on a phone. The
+   bar itself is noise on a 4-item row. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -108,4 +209,55 @@ summary {
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Sheets rise from the edge they're anchored to. The overshoot-free easing
+   matters: a bounce here reads as a web animation, not a system sheet. */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-backdrop {
+  animation: backdrop-in 0.25s ease-out;
+}
+
+.animate-sheet-up {
+  animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.animate-sheet-zoom {
+  animation: sheet-zoom 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up,
+  .animate-sheet-zoom,
+  .animate-fade-in {
+    animation: none;
+  }
 }
