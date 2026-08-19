@@ -6,6 +6,8 @@ import { formatINR, formatMonthLabel, monthStartISO } from "@/lib/format";
 import { CATEGORIES, type Budget, type Category, type CategoryBudget } from "@/lib/types";
 import { CATEGORY_STYLES } from "@/lib/categories";
 import { revalidateBudget } from "@/lib/revalidate";
+import Sheet from "./Sheet";
+import { Button, Field, inputClass } from "./ui";
 
 type CategoryLimits = Partial<Record<Category, string>>;
 
@@ -102,106 +104,88 @@ export default function SettingsModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="flex max-h-[85vh] w-full max-w-sm flex-col rounded-3xl bg-surface shadow-xl animate-fade-in"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 pt-6">
-          <h2 className="text-lg font-semibold">Budgets</h2>
-          <p className="mt-1 text-sm text-muted">
-            {formatMonthLabel(month)} — no rollover, each month starts fresh.
-          </p>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          {loading ? (
-            <div className="space-y-2">
-              <div className="h-11 animate-pulse rounded-xl bg-subtle" />
-              <div className="h-11 animate-pulse rounded-xl bg-subtle" />
-            </div>
-          ) : (
-            <>
-              <label className="text-xs font-medium text-muted">
-                Overall limit (₹)
-              </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={limit}
-                onChange={(e) => setLimit(e.target.value)}
-                placeholder="e.g. 30000 — blank for none"
-                className="mt-1 w-full rounded-xl border border-line px-4 py-2.5 text-lg font-medium outline-none focus:border-line-strong"
-              />
-
-              <div className="mt-5">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-muted">
-                    Per-category limits (₹)
-                  </span>
-                  <span className="text-xs text-faint">
-                    {categoryTotal > 0 ? formatINR(categoryTotal) : "none set"}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-faint">
-                  Leave a category blank to keep it uncapped.
-                </p>
-                <div className="mt-2 space-y-1.5">
-                  {CATEGORIES.map((category) => (
-                    <div key={category} className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: CATEGORY_STYLES[category].hex }}
-                      />
-                      <span className="flex-1 text-sm text-ink">{category}</span>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={categoryLimits[category] ?? ""}
-                        onChange={(e) =>
-                          setCategoryLimits({
-                            ...categoryLimits,
-                            [category]: e.target.value,
-                          })
-                        }
-                        placeholder="—"
-                        className="w-28 rounded-lg border border-line px-2.5 py-1.5 text-right text-sm outline-none focus:border-line-strong"
-                      />
-                    </div>
-                  ))}
-                </div>
-                {overAllocated && (
-                  <p className="mt-2 text-xs text-warning">
-                    Category limits add up to {formatINR(categoryTotal)}, more than your{" "}
-                    {formatINR(overall)} overall limit.
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-
-          {error && <p className="mt-3 text-sm text-negative">{error}</p>}
-        </div>
-
-        <div className="flex gap-2 border-t border-line px-6 py-4">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-line py-2.5 font-medium text-muted hover:bg-subtle"
-          >
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Budgets"
+      description={`${formatMonthLabel(month)} — no rollover, each month starts fresh.`}
+      footer={
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={onClose} full>
             Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="flex-1 rounded-xl bg-accent py-2.5 font-medium text-accent-ink hover:bg-accent-hover disabled:opacity-50"
-          >
+          </Button>
+          <Button onClick={handleSave} disabled={saving || loading} full>
             {saving ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      }
+    >
+      {loading ? (
+        <div className="space-y-2">
+          <div className="h-12 animate-pulse rounded-2xl bg-subtle" />
+          <div className="h-12 animate-pulse rounded-2xl bg-subtle" />
+        </div>
+      ) : (
+        <>
+          <Field label="Overall limit (₹)">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+              placeholder="e.g. 30000 — blank for none"
+              className={`${inputClass} tnum text-title font-semibold`}
+            />
+          </Field>
+
+          <div className="mt-5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-footnote font-medium text-muted">
+                Per-category limits (₹)
+              </span>
+              <span className="tnum text-footnote text-faint">
+                {categoryTotal > 0 ? formatINR(categoryTotal) : "none set"}
+              </span>
+            </div>
+            <p className="mt-1 text-caption text-faint">
+              Leave a category blank to keep it uncapped.
+            </p>
+            <div className="mt-2.5 divide-y divide-line">
+              {CATEGORIES.map((category) => (
+                <div key={category} className="flex items-center gap-2.5 py-1.5">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: CATEGORY_STYLES[category].hex }}
+                  />
+                  <span className="flex-1 text-body text-ink">{category}</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={categoryLimits[category] ?? ""}
+                    onChange={(e) =>
+                      setCategoryLimits({
+                        ...categoryLimits,
+                        [category]: e.target.value,
+                      })
+                    }
+                    placeholder="—"
+                    aria-label={`${category} limit`}
+                    className="tnum min-h-[44px] w-28 rounded-xl border border-line bg-surface px-3 text-right text-body outline-none focus:border-line-strong"
+                  />
+                </div>
+              ))}
+            </div>
+            {overAllocated && (
+              <p className="mt-2.5 text-footnote text-warning">
+                Category limits add up to {formatINR(categoryTotal)}, more than your{" "}
+                {formatINR(overall)} overall limit.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {error && <p className="mt-3 text-subhead text-negative">{error}</p>}
+    </Sheet>
   );
 }

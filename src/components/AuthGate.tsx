@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PiggyIcon } from "./icons";
+import { Button, inputClass } from "./ui";
 
 const STORAGE_KEY = "paisatrack_unlocked";
 
@@ -44,14 +46,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!unlocked) {
     return (
-      <div className="flex min-h-screen flex-1 items-center justify-center px-4">
+      <div className="flex min-h-screen flex-1 items-center justify-center px-4 py-10">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm rounded-3xl bg-surface p-6 shadow-lg ring-1 ring-line"
+          className="w-full max-w-sm rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow-card)]"
         >
-          <div className="text-3xl">💸</div>
-          <h1 className="mt-2 text-lg font-semibold text-ink">PaisaTrack</h1>
-          <p className="mt-1 text-sm text-muted">Enter the password to continue.</p>
+          <PiggyIcon className="h-9 w-9 text-ink" />
+          <h1 className="mt-3 text-title text-ink">PaisaTrack</h1>
+          <p className="mt-1 text-subhead text-muted">Enter the password to continue.</p>
           <input
             type="password"
             inputMode="numeric"
@@ -59,16 +61,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
             placeholder="Password"
-            className="mt-4 w-full rounded-xl border border-line px-4 py-2.5 text-base outline-none focus:border-line-strong"
+            enterKeyHint="go"
+            className={`${inputClass} mt-5`}
           />
-          {error && <p className="mt-2 text-sm text-negative">{error}</p>}
-          <button
-            type="submit"
-            disabled={checking || !password}
-            className="mt-4 w-full rounded-xl bg-accent py-2.5 font-medium text-accent-ink hover:bg-accent-hover disabled:opacity-50"
-          >
+          {error && <p className="mt-2 text-subhead text-negative">{error}</p>}
+          <Button type="submit" disabled={checking || !password} full className="mt-3">
             {checking ? "Checking…" : "Unlock"}
-          </button>
+          </Button>
         </form>
       </div>
     );
