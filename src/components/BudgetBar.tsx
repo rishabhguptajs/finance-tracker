@@ -19,19 +19,21 @@ export default function BudgetBar({
   variant?: "card" | "plain";
 }) {
   const shell =
-    variant === "card" ? "rounded-2xl bg-surface px-4 py-3 shadow-sm ring-1 ring-line" : "";
+    variant === "card"
+      ? "rounded-3xl border border-line bg-surface px-4 py-3.5 shadow-[var(--shadow-card)]"
+      : "";
 
   if (limit === null) {
     return (
       <div
         className={
           variant === "card"
-            ? "rounded-2xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted"
-            : "text-sm text-muted"
+            ? "rounded-3xl border border-dashed border-line-strong px-4 py-3.5 text-subhead text-muted"
+            : "text-subhead text-muted"
         }
       >
         No budget set for this month.{" "}
-        <span className="font-medium text-ink">Set one in ⚙️ settings.</span>
+        <span className="font-medium text-ink">Set one in settings.</span>
       </div>
     );
   }
@@ -41,13 +43,20 @@ export default function BudgetBar({
 
   return (
     <div className={shell}>
-      <div className="flex items-center justify-between text-sm">
+      <div className="tnum flex items-center justify-between text-subhead">
         <span className="font-medium text-ink">
           {formatINR(spent)} <span className="text-faint">of {formatINR(limit)}</span>
         </span>
         <span className={`font-semibold ${tone.text}`}>{Math.round(rawPct)}%</span>
       </div>
-      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-subtle">
+      <div
+        className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-subtle"
+        role="progressbar"
+        aria-valuenow={Math.round(rawPct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Budget used"
+      >
         <div
           className={`h-full rounded-full transition-all duration-500 ${tone.bar}`}
           style={{ width: `${Math.min(rawPct, 100)}%` }}

@@ -19,8 +19,8 @@ export default function CategoryBudgetBars({
 }) {
   if (progress.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-faint">
-        No category limits set for this month. Add them in ⚙️ settings to track them here.
+      <p className="py-8 text-center text-subhead text-faint">
+        No category limits set for this month. Add them in settings to track them here.
       </p>
     );
   }
@@ -36,9 +36,9 @@ export default function CategoryBudgetBars({
           <button
             key={category}
             onClick={() => onSelect?.(category)}
-            className="block w-full text-left"
+            className="press press-subtle block w-full rounded-xl py-1 text-left"
           >
-            <div className="flex items-baseline justify-between text-sm">
+            <div className="flex items-baseline justify-between text-subhead">
               <span className="flex items-center gap-1.5 font-medium text-ink">
                 <span
                   className="h-2 w-2 rounded-full"
@@ -46,7 +46,7 @@ export default function CategoryBudgetBars({
                 />
                 {category}
               </span>
-              <span className={over ? "font-semibold text-negative" : "text-muted"}>
+              <span className={`tnum ${over ? "font-semibold text-negative" : "text-muted"}`}>
                 {formatINR(spent)}{" "}
                 <span className="text-faint">of {formatINR(limit)}</span>
               </span>
@@ -61,7 +61,7 @@ export default function CategoryBudgetBars({
               />
             </div>
             {over && (
-              <p className="mt-1 text-xs font-medium text-negative">
+              <p className="tnum mt-1 text-footnote font-medium text-negative">
                 Over by {formatINR(spent - limit)}
               </p>
             )}

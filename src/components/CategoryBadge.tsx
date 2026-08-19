@@ -7,7 +7,7 @@ export default function CategoryBadge({ category }: { category: Category }) {
   const { hex } = CATEGORY_STYLES[category];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+      className="inline-flex items-center gap-1.5 shrink-0 rounded-full px-2 py-0.5 text-caption font-medium"
       style={{ backgroundColor: categoryTint(category), color: hex }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: hex }} />

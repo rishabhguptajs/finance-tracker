@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
+
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -29,24 +31,24 @@ export default function MonthSelector({
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1 rounded-full border border-line bg-surface p-1">
       <button
         onClick={prev}
-        className="rounded-full p-2 text-muted hover:bg-subtle"
+        className="press flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-subtle"
         aria-label="Previous month"
       >
-        ←
+        <ChevronLeftIcon className="h-[18px] w-[18px]" />
       </button>
-      <span className="w-36 text-center font-semibold text-ink">
+      <span className="min-w-[8.5rem] text-center text-subhead font-semibold text-ink">
         {MONTH_NAMES[month]} {year}
       </span>
       <button
         onClick={next}
         disabled={isCurrentMonth}
-        className="rounded-full p-2 text-muted hover:bg-subtle disabled:opacity-30"
+        className="press flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-subtle disabled:pointer-events-none disabled:opacity-30"
         aria-label="Next month"
       >
-        →
+        <ChevronRightIcon className="h-[18px] w-[18px]" />
       </button>
     </div>
   );

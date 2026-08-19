@@ -1,6 +1,7 @@
 "use client";
 
 import { formatINR } from "@/lib/format";
+import { AlertIcon } from "./icons";
 
 export default function BudgetAlertBanner({
   spent,
@@ -17,13 +18,17 @@ export default function BudgetAlertBanner({
 
   return (
     <div
-      className={`animate-fade-in rounded-2xl px-4 py-3 text-sm font-medium shadow-sm ring-1 ring-line ${
+      className={`animate-fade-in flex items-center gap-2.5 rounded-2xl px-4 py-3 text-subhead font-medium ${
         over ? "bg-negative-soft text-negative" : "bg-warning-soft text-warning"
       }`}
+      role="status"
     >
-      {over
-        ? `⚠️ Over budget by ${formatINR(spent - limit)}`
-        : `You've used ${Math.round(pct)}% of this month's budget`}
+      <AlertIcon className="h-[18px] w-[18px] shrink-0" />
+      <span className="tnum">
+        {over
+          ? `Over budget by ${formatINR(spent - limit)}`
+          : `You've used ${Math.round(pct)}% of this month's budget`}
+      </span>
     </div>
   );
 }
