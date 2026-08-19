@@ -8,6 +8,9 @@ import { formatINR } from "@/lib/format";
 import { CATEGORY_STYLES } from "@/lib/categories";
 import ExpenseRow from "@/components/ExpenseRow";
 import IncomeRow from "@/components/IncomeRow";
+import Sheet from "@/components/Sheet";
+import { Button, Card, Chip, ChipRow, Field, inputClass } from "@/components/ui";
+import { ArrowDownIcon, ArrowUpIcon, FilterIcon, SearchIcon } from "@/components/icons";
 
 type SortBy = "spent_on" | "amount";
 type EntryType = "all" | "expense" | "income";
@@ -22,6 +25,7 @@ export default function TransactionsPage() {
   const [to, setTo] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("spent_on");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
@@ -92,109 +96,106 @@ export default function TransactionsPage() {
   const spent = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const earned = income.reduce((s, i) => s + Number(i.amount), 0);
 
+  // Everything that lives behind the Filters sheet, so the button can say how
+  // much is hidden in there rather than leaving it to be discovered.
+  const advancedCount = [category, paymentMethod, from, to].filter(Boolean).length;
+
+  function clearAdvanced() {
+    setCategory("");
+    setPaymentMethod("");
+    setFrom("");
+    setTo("");
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-ink">All transactions</h1>
-        <span className="text-sm font-medium text-muted">
+      <div>
+        <h1 className="text-large-title text-ink">Activity</h1>
+        <p className="tnum mt-1.5 text-subhead font-medium text-muted">
           {showExpenses && <>{formatINR(spent)} out</>}
           {showExpenses && showIncome && " · "}
           {showIncome && <span className="text-positive">{formatINR(earned)} in</span>}
-        </span>
+        </p>
       </div>
 
-      <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or text…"
-            className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-line-strong lg:col-span-2"
-          />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as Category | "")}
-            className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
-            style={category ? { color: CATEGORY_STYLES[category].hex } : undefined}
-          >
-            <option value="">All categories</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod | "")}
-            className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
-          >
-            <option value="">Any payment</option>
-            {PAYMENT_METHODS.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
-          />
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-faint">Show</span>
-            {(["all", "expense", "income"] as EntryType[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setEntryType(t)}
-                className={`rounded-full px-3 py-1 font-medium capitalize ${
-                  entryType === t ? "bg-accent text-accent-ink" : "bg-subtle text-muted"
-                }`}
-              >
-                {t === "all" ? "All" : t === "expense" ? "Money out" : "Money in"}
-              </button>
-            ))}
+      {/* Search and the type/sort chips stay on the page; the rarely-touched
+          controls move into a sheet. All five stacked full-width used to push
+          the first transaction below the fold on a phone. */}
+      <div className="space-y-2.5">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-[18px] w-[18px] -translate-y-1/2 text-faint" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name or text…"
+              type="search"
+              className={`${inputClass} pl-10`}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-faint">Sort by</span>
-            {(["spent_on", "amount"] as SortBy[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  if (sortBy === s) setSortDir(sortDir === "asc" ? "desc" : "asc");
-                  else { setSortBy(s); setSortDir("desc"); }
-                }}
-                className={`rounded-full px-3 py-1 font-medium ${
-                  sortBy === s ? "bg-accent text-accent-ink" : "bg-subtle text-muted"
-                }`}
-              >
-                {s === "spent_on" ? "Date" : "Amount"} {sortBy === s && (sortDir === "asc" ? "↑" : "↓")}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => setFiltersOpen(true)}
+            className="press relative flex min-h-[44px] shrink-0 items-center gap-2 rounded-2xl border border-line bg-surface px-4 text-subhead font-medium text-ink hover:bg-subtle"
+          >
+            <FilterIcon className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">Filters</span>
+            {advancedCount > 0 && (
+              <span className="tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-ink">
+                {advancedCount}
+              </span>
+            )}
+          </button>
         </div>
+
+        <ChipRow>
+          {(["all", "expense", "income"] as EntryType[]).map((t) => (
+            <Chip key={t} active={entryType === t} onClick={() => setEntryType(t)}>
+              {t === "all" ? "All" : t === "expense" ? "Money out" : "Money in"}
+            </Chip>
+          ))}
+          <span className="my-1 w-px shrink-0 bg-line" />
+          {(["spent_on", "amount"] as SortBy[]).map((s) => (
+            <Chip
+              key={s}
+              active={sortBy === s}
+              onClick={() => {
+                if (sortBy === s) setSortDir(sortDir === "asc" ? "desc" : "asc");
+                else {
+                  setSortBy(s);
+                  setSortDir("desc");
+                }
+              }}
+            >
+              {s === "spent_on" ? "Date" : "Amount"}
+              {sortBy === s &&
+                (sortDir === "asc" ? (
+                  <ArrowUpIcon className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowDownIcon className="h-3.5 w-3.5" />
+                ))}
+            </Chip>
+          ))}
+        </ChipRow>
+
         {expenseOnlyFilter && entryType !== "expense" && (
-          <p className="mt-2 text-xs text-faint">
+          <p className="px-1 text-footnote text-faint">
             Income is hidden while a category or payment filter is on.
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
+      <Card className="p-3 sm:p-4">
         <div className="divide-y divide-line">
           {loading ? (
             <div className="space-y-2 py-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded-xl bg-subtle" />
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-subtle" />
               ))}
             </div>
           ) : rows.length === 0 ? (
-            <p className="py-10 text-center text-sm text-faint">No transactions match your filters.</p>
+            <p className="py-12 text-center text-subhead text-faint">
+              No transactions match your filters.
+            </p>
           ) : (
             rows.map((row) =>
               row.kind === "expense" ? (
@@ -205,7 +206,84 @@ export default function TransactionsPage() {
             )
           )}
         </div>
-      </div>
+      </Card>
+
+      <Sheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Filters"
+        description="Category and payment apply to expenses only."
+        footer={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={clearAdvanced} full disabled={advancedCount === 0}>
+              Clear
+            </Button>
+            <Button onClick={() => setFiltersOpen(false)} full>
+              Done
+            </Button>
+          </div>
+        }
+      >
+        <div>
+          <span className="text-footnote font-medium text-muted">Category</span>
+          <div className="mt-1.5">
+            <ChipRow>
+              <Chip active={category === ""} onClick={() => setCategory("")}>
+                All
+              </Chip>
+              {CATEGORIES.map((c) => (
+                <Chip
+                  key={c}
+                  active={category === c}
+                  onClick={() => setCategory(category === c ? "" : c)}
+                  style={category === c ? undefined : { color: CATEGORY_STYLES[c].hex }}
+                >
+                  {c}
+                </Chip>
+              ))}
+            </ChipRow>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <span className="text-footnote font-medium text-muted">Paid with</span>
+          <div className="mt-1.5">
+            <ChipRow>
+              <Chip active={paymentMethod === ""} onClick={() => setPaymentMethod("")}>
+                Any
+              </Chip>
+              {PAYMENT_METHODS.map((m) => (
+                <Chip
+                  key={m}
+                  active={paymentMethod === m}
+                  onClick={() => setPaymentMethod(paymentMethod === m ? "" : m)}
+                >
+                  {m}
+                </Chip>
+              ))}
+            </ChipRow>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Field label="From">
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="To">
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+      </Sheet>
     </div>
   );
 }
