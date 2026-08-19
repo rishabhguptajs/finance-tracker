@@ -125,30 +125,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
+        <h1 className="text-large-title text-ink">Dashboard</h1>
         <MonthSelector year={year} month={month} onChange={(y, m) => { setYear(y); setMonth(m); }} />
       </div>
 
       <BudgetAlertBanner spent={total} limit={budgetLimit} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <p className="text-sm font-medium text-muted">Total spent</p>
-          <p className="mt-1 text-4xl font-bold tracking-tight text-ink">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <p className="text-subhead font-medium text-muted">Total spent</p>
+          <p className="tnum mt-1 text-4xl font-bold tracking-[-0.03em] text-ink">
             {formatINR(total)}
           </p>
           {momPct !== null && (
-            <p className={`mt-2 text-sm font-medium ${momPct >= 0 ? "text-negative" : "text-positive"}`}>
+            <p className={`tnum mt-2 text-subhead font-medium ${momPct >= 0 ? "text-negative" : "text-positive"}`}>
               {momPct >= 0 ? "↑" : "↓"} {Math.abs(Math.round(momPct))}% vs last month
             </p>
           )}
         </div>
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted">Budget</p>
+            <p className="text-subhead font-medium text-muted">Budget</p>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="text-xs font-medium text-faint hover:text-ink"
+              className="press -mr-2 -my-1 min-h-[36px] rounded-full px-2.5 text-footnote font-medium text-faint hover:bg-subtle hover:text-ink"
             >
               Edit
             </button>
@@ -159,34 +159,37 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <p className="text-sm font-medium text-muted">Money in</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-positive">
+      {/* Two-up on a phone rather than three stacked full-width cards, which
+          turned the secondary stats into three screens of scrolling. Committed
+          takes the full row since its caption is a full sentence. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <p className="text-subhead font-medium text-muted">Money in</p>
+          <p className="tnum mt-1 text-2xl font-bold tracking-[-0.02em] text-positive">
             {formatINR(earned)}
           </p>
         </div>
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <p className="text-sm font-medium text-muted">Saved</p>
+        <div className="rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <p className="text-subhead font-medium text-muted">Saved</p>
           <p
-            className={`mt-1 text-2xl font-bold tracking-tight ${
+            className={`tnum mt-1 text-2xl font-bold tracking-[-0.02em] ${
               saved >= 0 ? "text-ink" : "text-negative"
             }`}
           >
             {formatINR(saved)}
           </p>
-          <p className="mt-1 text-xs text-faint">
+          <p className="mt-1 text-footnote text-faint">
             {savingsRate === null
               ? "Log income to see your savings rate"
               : `${Math.round(savingsRate)}% of what came in`}
           </p>
         </div>
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <p className="text-sm font-medium text-muted">Committed</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-ink">
+        <div className="col-span-2 rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:col-span-1 sm:p-5">
+          <p className="text-subhead font-medium text-muted">Committed</p>
+          <p className="tnum mt-1 text-2xl font-bold tracking-[-0.02em] text-ink">
             {formatINR(committed)}
           </p>
-          <p className="mt-1 text-xs text-faint">
+          <p className="mt-1 text-footnote text-faint">
             {recurring.length === 0
               ? "No recurring charges detected"
               : `Across ${recurring.length} recurring charge${recurring.length === 1 ? "" : "s"} a month`}
@@ -195,15 +198,15 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <h2 className="font-semibold text-ink">Spend by category</h2>
-          <p className="text-xs text-faint">Tap a slice to filter transactions below</p>
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <h2 className="text-section text-ink">Spend by category</h2>
+          <p className="text-footnote text-faint">Tap a slice to filter transactions below</p>
           <div className="mt-2">
             <CategoryDonutChart data={byCategory} selected={selectedCategory} onSelect={setSelectedCategory} />
           </div>
         </div>
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <h2 className="font-semibold text-ink">Spend by day</h2>
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <h2 className="text-section text-ink">Spend by day</h2>
           <div className="mt-2">
             <DailySpendChart data={byDay} />
           </div>
@@ -211,12 +214,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-ink">Category limits</h2>
+            <h2 className="text-section text-ink">Category limits</h2>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="text-xs font-medium text-faint hover:text-ink"
+              className="press -mr-2 -my-1 min-h-[36px] rounded-full px-2.5 text-footnote font-medium text-faint hover:bg-subtle hover:text-ink"
             >
               Edit
             </button>
@@ -225,9 +228,9 @@ export default function DashboardPage() {
             <CategoryBudgetBars progress={categoryProgress} onSelect={setSelectedCategory} />
           </div>
         </div>
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-          <h2 className="font-semibold text-ink">Recurring</h2>
-          <p className="text-xs text-faint">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <h2 className="text-section text-ink">Recurring</h2>
+          <p className="text-footnote text-faint">
             Detected from your history — subscriptions, bills, EMIs
           </p>
           <div className="mt-2">
@@ -236,15 +239,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
+      <div className="rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-ink">
+          <h2 className="text-section text-ink">
             Transactions {selectedCategory && `· ${selectedCategory}`}
           </h2>
           {selectedCategory && (
             <button
               onClick={() => setSelectedCategory(null)}
-              className="text-xs font-medium text-faint hover:text-muted"
+              className="press -mr-2 -my-1 min-h-[36px] rounded-full px-2.5 text-footnote font-medium text-faint hover:bg-subtle hover:text-muted"
             >
               Clear filter
             </button>
@@ -258,7 +261,7 @@ export default function DashboardPage() {
               <div className="h-12 animate-pulse rounded-xl bg-subtle" />
             </div>
           ) : filteredExpenses.length === 0 ? (
-            <p className="py-8 text-center text-sm text-faint">No transactions.</p>
+            <p className="py-10 text-center text-subhead text-faint">No transactions.</p>
           ) : (
             filteredExpenses
               .slice()

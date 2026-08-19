@@ -128,19 +128,20 @@ export default function TrendsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Trends</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-large-title text-ink">Trends</h1>
+          <p className="mt-1.5 text-subhead text-muted">
             Where things are drifting, month over month.
           </p>
         </div>
-        <div className="flex rounded-full bg-subtle p-0.5 text-xs font-medium">
+        <div className="flex rounded-full bg-subtle p-1 text-subhead font-medium">
           {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`rounded-full px-3 py-1.5 transition-colors ${
+              aria-pressed={range === r}
+              className={`press min-h-[36px] rounded-full px-3.5 transition-colors ${
                 range === r ? "bg-accent text-accent-ink" : "text-muted"
               }`}
             >
@@ -150,7 +151,7 @@ export default function TrendsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile label="Avg monthly spend" value={formatINR(Math.round(avgSpend))} />
         <StatTile
           label="Avg monthly income"
@@ -170,16 +171,16 @@ export default function TrendsPage() {
         />
       </div>
 
-      <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-        <h2 className="font-semibold text-ink">Money in vs money out</h2>
+      <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+        <h2 className="text-section text-ink">Money in vs money out</h2>
         <div className="mt-2">
           {loading ? <ChartSkeleton /> : <MonthlyFlowChart data={flowData} />}
         </div>
       </div>
 
-      <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-        <h2 className="font-semibold text-ink">Spend by category</h2>
-        <p className="text-xs text-faint">Each bar is one month, split by category</p>
+      <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+        <h2 className="text-section text-ink">Spend by category</h2>
+        <p className="text-footnote text-faint">Each bar is one month, split by category</p>
         <div className="mt-2">
           {loading ? (
             <ChartSkeleton />
@@ -189,12 +190,12 @@ export default function TrendsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-line">
-        <h2 className="px-1 font-semibold text-ink">Month by month</h2>
+      <div className="rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+        <h2 className="px-1 text-section text-ink">Month by month</h2>
         <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[420px] text-sm">
+          <table className="tnum w-full min-w-[420px] text-subhead">
             <thead>
-              <tr className="text-left text-xs font-medium uppercase tracking-wide text-faint">
+              <tr className="text-left text-caption font-medium tracking-wide text-faint uppercase">
                 <th className="px-1 py-2 font-medium">Month</th>
                 <th className="px-1 py-2 text-right font-medium">In</th>
                 <th className="px-1 py-2 text-right font-medium">Out</th>
@@ -252,10 +253,10 @@ function StatTile({
   dotColor?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
-      <p className="text-sm font-medium text-muted">{label}</p>
+    <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+      <p className="text-subhead font-medium text-muted">{label}</p>
       <p
-        className={`mt-1 flex items-center gap-2 text-2xl font-bold tracking-tight ${
+        className={`tnum mt-1 flex items-center gap-2 text-2xl font-bold tracking-[-0.02em] ${
           tone === "positive" ? "text-positive" : "text-ink"
         }`}
       >
@@ -264,7 +265,7 @@ function StatTile({
         )}
         {value}
       </p>
-      {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
+      {hint && <p className="mt-1 text-footnote text-faint">{hint}</p>}
     </div>
   );
 }
