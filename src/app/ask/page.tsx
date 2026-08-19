@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ToolStep } from "@/lib/ask";
+import { Button, Card, inputClass } from "@/components/ui";
 
 interface Answer {
   question: string;
@@ -49,8 +50,8 @@ export default function AskPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Ask your money</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-large-title text-ink">Ask your money</h1>
+        <p className="mt-1.5 text-subhead text-muted">
           Questions about your own spending, answered from your own rows.
         </p>
       </div>
@@ -60,31 +61,36 @@ export default function AskPage() {
           e.preventDefault();
           submit(question);
         }}
-        className="flex gap-2"
+        className="space-y-2"
       >
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="How much on Swiggy in the last 3 months?"
           disabled={loading}
-          className="w-full rounded-2xl border border-line bg-surface px-5 py-4 text-base shadow-sm outline-none placeholder:text-faint focus:border-line-strong disabled:opacity-60"
+          enterKeyHint="send"
+          className={`${inputClass} min-h-[52px] shadow-[var(--shadow-card)]`}
         />
-        <button
+        <Button
           type="submit"
           disabled={loading || !question.trim()}
-          className="shrink-0 rounded-2xl bg-accent px-5 py-4 font-medium text-accent-ink shadow-sm transition hover:bg-accent-hover disabled:opacity-40"
+          full
+          className="min-h-[52px]"
         >
-          {loading ? "…" : "Ask"}
-        </button>
+          {loading ? "Thinking…" : "Ask"}
+        </Button>
       </form>
 
       {history.length === 0 && !loading && (
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-2">
+          <p className="px-1 text-footnote text-faint">Try one of these</p>
+          {/* Full-width rows rather than wrapped chips: these are sentences, and
+              wrapped chips broke into ragged two-line blocks on a phone. */}
           {SUGGESTIONS.map((s) => (
             <button
               key={s}
               onClick={() => submit(s)}
-              className="rounded-full bg-subtle px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-subtle-strong"
+              className="press press-subtle flex min-h-[44px] w-full items-center rounded-2xl bg-subtle px-4 py-2.5 text-left text-subhead font-medium text-muted hover:bg-subtle-strong"
             >
               {s}
             </button>
@@ -92,39 +98,36 @@ export default function AskPage() {
         </div>
       )}
 
-      {error && <p className="text-sm text-negative">{error}</p>}
+      {error && <p className="text-subhead text-negative">{error}</p>}
 
       {loading && (
-        <div className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line">
+        <Card className="p-5">
           <div className="h-4 w-2/3 animate-pulse rounded bg-subtle" />
           <div className="mt-2 h-4 w-1/2 animate-pulse rounded bg-subtle" />
-        </div>
+        </Card>
       )}
 
       {history.map((entry, i) => (
-        <div
-          key={`${entry.question}-${i}`}
-          className="animate-fade-in rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-line"
-        >
-          <p className="text-sm font-medium text-muted">{entry.question}</p>
-          <p className="mt-2 whitespace-pre-wrap text-ink">{entry.answer}</p>
+        <Card key={`${entry.question}-${i}`} className="animate-fade-in p-5">
+          <p className="text-subhead font-medium text-muted">{entry.question}</p>
+          <p className="mt-2 text-body whitespace-pre-wrap text-ink">{entry.answer}</p>
 
           {entry.steps.length > 0 && (
             <details className="mt-3 border-t border-line pt-3">
-              <summary className="cursor-pointer text-xs font-medium text-faint hover:text-muted">
+              <summary className="cursor-pointer text-footnote font-medium text-faint hover:text-muted">
                 Where this came from ({entry.steps.length} lookup
                 {entry.steps.length === 1 ? "" : "s"})
               </summary>
               <ul className="mt-2 space-y-1">
                 {entry.steps.map((step, j) => (
-                  <li key={j} className="text-xs text-muted">
+                  <li key={j} className="text-footnote text-muted">
                     <span className="font-mono text-faint">{step.tool}</span> — {step.summary}
                   </li>
                 ))}
               </ul>
             </details>
           )}
-        </div>
+        </Card>
       ))}
     </div>
   );
