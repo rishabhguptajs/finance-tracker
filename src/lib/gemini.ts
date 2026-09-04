@@ -27,6 +27,7 @@ Return ONLY valid JSON, no markdown formatting: a JSON array where each element 
 ]
 If there is only one item, return an array with a single object.
 If no date is mentioned for an item, use today's date.
+Be careful not to confuse a year with an amount: a number immediately followed by "rs", "rupees", "₹", or similar is always the amount, never a year, even if it looks like a year (e.g. "1999rs" is amount 1999, not the year 1999). Dates in this input never include a year unless it's clearly written as part of a date phrase separate from the currency amount.
 For income, "merchant" is the source (employer, client, platform) and "category" should be "Other".
 If merchant is unclear, make a reasonable guess from context or use "Unknown".
 Only set "payment_method" when the text actually indicates it (e.g. "paid by card", "upi", "cash", "gpay" -> UPI). Otherwise use null.`;
