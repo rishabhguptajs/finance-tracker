@@ -14,6 +14,9 @@ type Row = {
 };
 
 function csvEscape(value: string): string {
+  // Prefix formula-trigger characters so spreadsheet apps (Excel, Sheets)
+  // don't interpret user-supplied text like "=cmd(...)" as a formula.
+  if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`;
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
 }
