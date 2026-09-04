@@ -10,7 +10,7 @@ import ExpenseRow from "@/components/ExpenseRow";
 import IncomeRow from "@/components/IncomeRow";
 import Sheet from "@/components/Sheet";
 import { Button, Card, Chip, ChipRow, Field, inputClass } from "@/components/ui";
-import { ArrowDownIcon, ArrowUpIcon, FilterIcon, SearchIcon } from "@/components/icons";
+import { ArrowDownIcon, ArrowUpIcon, DownloadIcon, FilterIcon, SearchIcon } from "@/components/icons";
 
 type SortBy = "spent_on" | "amount";
 type EntryType = "all" | "expense" | "income";
@@ -100,6 +100,13 @@ export default function TransactionsPage() {
   // much is hidden in there rather than leaving it to be discovered.
   const advancedCount = [category, paymentMethod, from, to].filter(Boolean).length;
 
+  const exportParams = new URLSearchParams(sharedParams);
+  exportParams.delete("sortDir");
+  if (category) exportParams.set("category", category);
+  if (paymentMethod) exportParams.set("paymentMethod", paymentMethod);
+  if (entryType !== "all") exportParams.set("entryType", entryType);
+  const exportHref = `/api/export?${exportParams.toString()}`;
+
   function clearAdvanced() {
     setCategory("");
     setPaymentMethod("");
@@ -145,6 +152,14 @@ export default function TransactionsPage() {
               </span>
             )}
           </button>
+          <a
+            href={exportHref}
+            download
+            className="press flex min-h-[44px] shrink-0 items-center gap-2 rounded-2xl border border-line bg-surface px-4 text-subhead font-medium text-ink hover:bg-subtle"
+          >
+            <DownloadIcon className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">Export</span>
+          </a>
         </div>
 
         <ChipRow>

@@ -180,6 +180,15 @@ export function FilterIcon(props: IconProps) {
   );
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 4v11m0 0 4.5-4.5M12 15l-4.5-4.5" />
+      <path d="M5 19h14" />
+    </Svg>
+  );
+}
+
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <Svg {...props}>
